@@ -96,7 +96,9 @@ const main = (config) => {
 const getKeys = obj => Object.keys(obj)
 const doEach = (obj, func) => getKeys(obj).forEach(n => func(obj[n], n))
 
-const patternDependencies = '{[\\w\\W]+"dependencies"[ \\t]*:[ \\t]*({["\\w-_.:^\\n \\t,]+})'
+const patternBase = '{[\\w\\W]+"__KEY__"[ \\t]*:[ \\t]*({["\\w-_.:^\\n \\t,]+})'
+const patternScripts = patternBase.replace("__KEY__", "scripts")
+const patternDependencies = patternBase.replace("__KEY__", "dependencies")
 
 const fs = require('fs-extra')
 const { find } = require('regex-finder')

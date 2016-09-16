@@ -10,10 +10,14 @@ npm install --save-dev cleardep
 ```
 
 ## Example:
-```javascript
+```terminal
 const cleardep = require('cleardep')
 
-cleardep({
-  path: ['./TEST']
-})
+cleardep({ path: './APP' })
 ```
+
+And use:
+```terminal
+npm prune
+```
+not is the best way but i will work to update this module coming soon...

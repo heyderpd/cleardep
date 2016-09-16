@@ -95,7 +95,9 @@ var doEach = function doEach(obj, func) {
   });
 };
 
-var patternDependencies = '{[\\w\\W]+"dependencies"[ \\t]*:[ \\t]*({["\\w-_.:^\\n \\t,]+})';
+var patternBase = '{[\\w\\W]+"__KEY__"[ \\t]*:[ \\t]*({["\\w-_.:^\\n \\t,]+})';
+var patternScripts = patternBase.replace("__KEY__", "scripts");
+var patternDependencies = patternBase.replace("__KEY__", "dependencies");
 
 var fs = require('fs-extra');
 
