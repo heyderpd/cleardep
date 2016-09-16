@@ -1,6 +1,6 @@
 {
   "name": "cleardep",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "clear dependencies module",
   "main": "index.js",
   "scripts": {
