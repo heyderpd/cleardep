@@ -6,101 +6,92 @@
  */
 
 const listInstalledModules = () => {
-  const rawJson = fs.readFileSync(
+  const rawPkt = fs.readFileSync(
                                   './package.json',
                                   'utf8')
 
-  const Pattern = new RegExp(patternDependencies, "gim")
-  let result = null
-  if ((result = Pattern.exec(rawJson)) !== null) {
-    return {
-      'raw': rawJson,
-      'pos': {
-        'S': Pattern.lastIndex -result[1].length,
-        'E': Pattern.lastIndex
-      },
-      'dep': JSON.parse(result[1])
-    }
-  } else {
-    return undefined
-  }
+  const jsonPkt = JSON.parse(rawPkt)
+  jsonPkt.dependencies = jsonPkt.dependencies ? jsonPkt.dependencies : {}
+  jsonPkt.devDependencies = jsonPkt.devDependencies ? jsonPkt.devDependencies : {}
+  jsonPkt.dependenciesRemoveds = jsonPkt.dependenciesRemoveds ? jsonPkt.dependenciesRemoveds : {}
+  jsonPkt.devDependenciesRemoveds = jsonPkt.devDependenciesRemoveds ? jsonPkt.devDependenciesRemoveds : {}
+
+  return jsonPkt
 }
 
-const findCalledModules = (installedDeps, extension, path) => {
-  return find({
-                list: installedDeps,
+const findCalledModules = () => {
+  const { jsonPkt, extension, path } = data
+  const { dependencies } = jsonPkt
+
+  const notFound = find({
+                list: getKeys(dependencies),
                 extension: extension,
                 path: path,
                 getResumeOf: 'NOT_FOUND',
                 pattern: '(?:import[ \\t]*{?[ \\w,.\\[\\]{}]*}?[ \\t]+from[ \\t]+|import[ \\t]+|required\\()"(__LIST__)(?:\\.\\w+)?"\\)?'
               })
+  return {
+      dependencies: notFound,
+      devDependencies: {}
+    }
 }
 
-const clearDependencies = (packageObj, notUsedModules) => {
+const clearAllDependencies = () => {
+  const { jsonPkt, notFound } = data
+  const newJsonPkt = copy(jsonPkt)
+  const { dependencies, dependenciesRemoveds, devDependencies, devDependenciesRemoveds } = newJsonPkt
+
   console.log("removed's:")
-  doEach(notUsedModules, module => {
-    delete packageObj[module]
-    console.log(`\t${module}`)
+  doEach(notFound.dependencies, (_, module) => {
+    if (module !== 'cleardep') {
+      dependenciesRemoveds[module] = dependencies[module]
+      delete dependencies[module]
+      console.log(`\t${module}`)
+    }
   })
-  return packageObj
+
+  newJsonPkt.dependencies = dependencies
+  newJsonPkt.dependenciesRemoveds = dependenciesRemoveds
+  return newJsonPkt
 }
 
-const depStringify = (dependencies) => {
-  let depStr = []
-  doEach(dependencies, (version, module) => {
-    depStr.push(`    "${module}": "${version}"`)
-  })
-  return `{\n${depStr.join(',\n')}\n  }`
-}
-
-const margePackage = (packageObj, dependencies) => {
-  const strDep = depStringify(dependencies)
-  const { raw, pos, dep } = packageObj
-  console.log(raw.length, pos, dep)
-  const first  = raw.slice(0, pos.S)
-  const second = raw.slice(pos.E, raw.length)
-  console.log( first + strDep + second )
-  return first + strDep + second
-}
-
-const main = (config) => {
+const main = (config) => { // (...args)
   if (config.path === undefined) {
     throw new Error('cleardep: param "path" is undefined')
   }
-  config.path = typeof(config.path) === 'string' ? [config.path] : config.path
-  
-  config.extension = config.extension !== undefined ? config.extension : ['js', 'jsx']
-  config.extension = typeof(config.extension) === 'string' ? [config.extension] : config.extension
 
-  const packageObj = listInstalledModules()
-  if (packageObj === undefined) {
-    console.log(`cleardep: package.json don\'t have dependencies.`)
+  data = {}
+
+  data.path = typeof(config.path) === 'string' ? [config.path] : config.path
+
+  config.extension = config.extension !== undefined ? config.extension : ['js', 'jsx']
+  data.extension = typeof(config.extension) === 'string' ? [config.extension] : config.extension
+
+  data.jsonPkt = listInstalledModules()
+
+  if (data.jsonPkt.dependencies === {}) {
+    throw new Error(`cleardep: package.json don\'t have dependencies.`)
+
   } else {
-    const notFoundModules = findCalledModules(
-                                              getKeys(packageObj.dep),
-                                              config.extension,
-                                              config.path)
-    const newDependencies = clearDependencies(
-                                              packageObj.dep,
-                                              notFoundModules)
-    const newPackage = margePackage(
-                                    packageObj,
-                                    newDependencies)    
+    data.notFound = findCalledModules()
+    data.newRawPkt = jsonis( clearAllDependencies() )
     fs.writeFileSync(
                       './package.json',
-                      newPackage)
-    console.log(`cleardep: remove a ${notFoundModules.length} itens`)
+                      data.newRawPkt)
+    const totalRemoved = length(data.notFound.dependencies) + length(data.notFound.devDependencies)
+    console.log(`cleardep: remove a ${totalRemoved} itens`)
   }
 }
 
-const getKeys = obj => Object.keys(obj)
-const doEach = (obj, func) => getKeys(obj).forEach(n => func(obj[n], n))
+let data = {}
 
-const patternBase = '{[\\w\\W]+"__KEY__"[ \\t]*:[ \\t]*({["\\w-_.:^\\n \\t,]+})'
-const patternScripts = patternBase.replace("__KEY__", "scripts")
-const patternDependencies = patternBase.replace("__KEY__", "dependencies")
+const copy = obj => Object.assign(obj)
+const length = obj => getKeys(obj).length
+const getKeys = obj => Object.keys(obj)
+const doEach = (obj, func) => getKeys(obj).forEach(n => func(n, obj[n]))
 
 const fs = require('fs-extra')
 const { find } = require('regex-finder')
+const jsonis = require('jsonis')
 
 module.exports = main

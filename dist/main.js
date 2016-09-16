@@ -7,97 +7,106 @@
  */
 
 var listInstalledModules = function listInstalledModules() {
-  var rawJson = fs.readFileSync('./package.json', 'utf8');
+  var rawPkt = fs.readFileSync('./package.json', 'utf8');
 
-  var Pattern = new RegExp(patternDependencies, "gim");
-  var result = null;
-  if ((result = Pattern.exec(rawJson)) !== null) {
-    return {
-      'raw': rawJson,
-      'pos': {
-        'S': Pattern.lastIndex - result[1].length,
-        'E': Pattern.lastIndex
-      },
-      'dep': JSON.parse(result[1])
-    };
-  } else {
-    return undefined;
-  }
+  var jsonPkt = JSON.parse(rawPkt);
+  jsonPkt.dependencies = jsonPkt.dependencies ? jsonPkt.dependencies : {};
+  jsonPkt.devDependencies = jsonPkt.devDependencies ? jsonPkt.devDependencies : {};
+  jsonPkt.dependenciesRemoveds = jsonPkt.dependenciesRemoveds ? jsonPkt.dependenciesRemoveds : {};
+  jsonPkt.devDependenciesRemoveds = jsonPkt.devDependenciesRemoveds ? jsonPkt.devDependenciesRemoveds : {};
+
+  return jsonPkt;
 };
 
-var findCalledModules = function findCalledModules(installedDeps, extension, path) {
-  return find({
-    list: installedDeps,
+var findCalledModules = function findCalledModules() {
+  var _data = data;
+  var jsonPkt = _data.jsonPkt;
+  var extension = _data.extension;
+  var path = _data.path;
+  var dependencies = jsonPkt.dependencies;
+
+
+  var notFound = find({
+    list: getKeys(dependencies),
     extension: extension,
     path: path,
     getResumeOf: 'NOT_FOUND',
     pattern: '(?:import[ \\t]*{?[ \\w,.\\[\\]{}]*}?[ \\t]+from[ \\t]+|import[ \\t]+|required\\()"(__LIST__)(?:\\.\\w+)?"\\)?'
   });
+  return {
+    dependencies: notFound,
+    devDependencies: {}
+  };
 };
 
-var clearDependencies = function clearDependencies(packageObj, notUsedModules) {
+var clearAllDependencies = function clearAllDependencies() {
+  var _data2 = data;
+  var jsonPkt = _data2.jsonPkt;
+  var notFound = _data2.notFound;
+
+  var newJsonPkt = copy(jsonPkt);
+  var dependencies = newJsonPkt.dependencies;
+  var dependenciesRemoveds = newJsonPkt.dependenciesRemoveds;
+  var devDependencies = newJsonPkt.devDependencies;
+  var devDependenciesRemoveds = newJsonPkt.devDependenciesRemoveds;
+
+
   console.log("removed's:");
-  doEach(notUsedModules, function (module) {
-    delete packageObj[module];
-    console.log('\t' + module);
+  doEach(notFound.dependencies, function (_, module) {
+    if (module !== 'cleardep') {
+      dependenciesRemoveds[module] = dependencies[module];
+      delete dependencies[module];
+      console.log('\t' + module);
+    }
   });
-  return packageObj;
-};
 
-var depStringify = function depStringify(dependencies) {
-  var depStr = [];
-  doEach(dependencies, function (version, module) {
-    depStr.push('    "' + module + '": "' + version + '"');
-  });
-  return '{\n' + depStr.join(',\n') + '\n  }';
-};
-
-var margePackage = function margePackage(packageObj, dependencies) {
-  var strDep = depStringify(dependencies);
-  var raw = packageObj.raw;
-  var pos = packageObj.pos;
-  var dep = packageObj.dep;
-
-  console.log(raw.length, pos, dep);
-  var first = raw.slice(0, pos.S);
-  var second = raw.slice(pos.E, raw.length);
-  console.log(first + strDep + second);
-  return first + strDep + second;
+  newJsonPkt.dependencies = dependencies;
+  newJsonPkt.dependenciesRemoveds = dependenciesRemoveds;
+  return newJsonPkt;
 };
 
 var main = function main(config) {
+  // (...args)
   if (config.path === undefined) {
     throw new Error('cleardep: param "path" is undefined');
   }
-  config.path = typeof config.path === 'string' ? [config.path] : config.path;
+
+  data = {};
+
+  data.path = typeof config.path === 'string' ? [config.path] : config.path;
 
   config.extension = config.extension !== undefined ? config.extension : ['js', 'jsx'];
-  config.extension = typeof config.extension === 'string' ? [config.extension] : config.extension;
+  data.extension = typeof config.extension === 'string' ? [config.extension] : config.extension;
 
-  var packageObj = listInstalledModules();
-  if (packageObj === undefined) {
-    console.log('cleardep: package.json don\'t have dependencies.');
+  data.jsonPkt = listInstalledModules();
+
+  if (data.jsonPkt.dependencies === {}) {
+    throw new Error('cleardep: package.json don\'t have dependencies.');
   } else {
-    var notFoundModules = findCalledModules(getKeys(packageObj.dep), config.extension, config.path);
-    var newDependencies = clearDependencies(packageObj.dep, notFoundModules);
-    var newPackage = margePackage(packageObj, newDependencies);
-    fs.writeFileSync('./package.json', newPackage);
-    console.log('cleardep: remove a ' + notFoundModules.length + ' itens');
+    data.notFound = findCalledModules();
+    data.newRawPkt = jsonis(clearAllDependencies());
+    fs.writeFileSync('./package.json', data.newRawPkt);
+    var totalRemoved = length(data.notFound.dependencies) + length(data.notFound.devDependencies);
+    console.log('cleardep: remove a ' + totalRemoved + ' itens');
   }
 };
 
+var data = {};
+
+var copy = function copy(obj) {
+  return Object.assign(obj);
+};
+var length = function length(obj) {
+  return getKeys(obj).length;
+};
 var getKeys = function getKeys(obj) {
   return Object.keys(obj);
 };
 var doEach = function doEach(obj, func) {
   return getKeys(obj).forEach(function (n) {
-    return func(obj[n], n);
+    return func(n, obj[n]);
   });
 };
-
-var patternBase = '{[\\w\\W]+"__KEY__"[ \\t]*:[ \\t]*({["\\w-_.:^\\n \\t,]+})';
-var patternScripts = patternBase.replace("__KEY__", "scripts");
-var patternDependencies = patternBase.replace("__KEY__", "dependencies");
 
 var fs = require('fs-extra');
 
@@ -105,5 +114,6 @@ var _require = require('regex-finder');
 
 var find = _require.find;
 
+var jsonis = require('jsonis');
 
 module.exports = main;
