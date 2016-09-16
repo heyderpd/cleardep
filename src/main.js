@@ -24,7 +24,7 @@ const findCalledModules = () => {
   const { dependencies } = jsonPkt
 
   const notFound = find({
-                list: getKeys(dependencies),
+                list: keys(dependencies),
                 extension: extension,
                 path: path,
                 getResumeOf: 'NOT_FOUND',
@@ -42,7 +42,7 @@ const clearAllDependencies = () => {
   const { dependencies, dependenciesRemoveds, devDependencies, devDependenciesRemoveds } = newJsonPkt
 
   console.log("removed's:")
-  doEach(notFound.dependencies, (_, module) => {
+  each(notFound.dependencies, (_, module) => {
     if (module !== 'cleardep') {
       dependenciesRemoveds[module] = dependencies[module]
       delete dependencies[module]
@@ -78,6 +78,7 @@ const main = (config) => { // (...args)
     fs.writeFileSync(
                       './package.json',
                       data.newRawPkt)
+                      console.log(data.notFound.dependencies)
     const totalRemoved = length(data.notFound.dependencies) + length(data.notFound.devDependencies)
     console.log(`cleardep: remove a ${totalRemoved} itens`)
   }
@@ -85,10 +86,7 @@ const main = (config) => { // (...args)
 
 let data = {}
 
-const copy = obj => Object.assign(obj)
-const length = obj => getKeys(obj).length
-const getKeys = obj => Object.keys(obj)
-const doEach = (obj, func) => getKeys(obj).forEach(n => func(n, obj[n]))
+const { copy, length, keys, each } = require('pytils')
 
 const fs = require('fs-extra')
 const { find } = require('regex-finder')
