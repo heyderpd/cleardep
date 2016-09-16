@@ -86,8 +86,8 @@ var main = function main(config) {
     data.notFound = findCalledModules();
     data.newRawPkt = jsonis(clearAllDependencies());
     fs.writeFileSync('./package.json', data.newRawPkt);
-    console.log(data.notFound.dependencies);
-    var totalRemoved = length(data.notFound.dependencies) + length(data.notFound.devDependencies);
+
+    var totalRemoved = data.notFound.dependencies.length; //) + length(data.notFound.devDependencies)
     console.log('cleardep: remove a ' + totalRemoved + ' itens');
   }
 };

@@ -78,8 +78,8 @@ const main = (config) => { // (...args)
     fs.writeFileSync(
                       './package.json',
                       data.newRawPkt)
-                      console.log(data.notFound.dependencies)
-    const totalRemoved = length(data.notFound.dependencies) + length(data.notFound.devDependencies)
+
+    const totalRemoved = data.notFound.dependencies.length //) + length(data.notFound.devDependencies)
     console.log(`cleardep: remove a ${totalRemoved} itens`)
   }
 }
