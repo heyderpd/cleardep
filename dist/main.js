@@ -31,7 +31,7 @@ var findCalledModules = function findCalledModules() {
     extension: extension,
     path: path,
     getResumeOf: 'NOT_FOUND',
-    pattern: '(?:import[ \\t]*{?[ \\w,.\\[\\]{}]*}?[ \\t]+from[ \\t]+|import[ \\t]+|required\\()"(__LIST__)(?:\\.\\w+)?"\\)?'
+    pattern: importPattern
   });
   return {
     dependencies: notFound,
@@ -65,18 +65,23 @@ var clearAllDependencies = function clearAllDependencies() {
   return newJsonPkt;
 };
 
-var main = function main(config) {
-  // (...args)
-  if (config.path === undefined) {
-    throw new Error('cleardep: param "path" is undefined');
+var main = function main() {
+  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
   }
 
+  // console.log('args:', args) //---!!
   data = {};
+  data.path = args[0].split(';');
 
-  data.path = typeof config.path === 'string' ? [config.path] : config.path;
+  args[1] = args[1] ? args[1].split('--ext=')[1] : undefined;
+  args[1] = args[1] ? args[1].split(';') : [];
+  data.extension = args[1].length ? args[1] : ['js', 'jsx'];
 
-  config.extension = config.extension !== undefined ? config.extension : ['js', 'jsx'];
-  data.extension = typeof config.extension === 'string' ? [config.extension] : config.extension;
+  if (data.path === undefined) {
+    throw new Error('cleardep: param "path" is undefined');
+  }
+  // console.log('data:', data) //---!!
 
   data.jsonPkt = listInstalledModules();
 
@@ -92,6 +97,7 @@ var main = function main(config) {
   }
 };
 
+var importPattern = '(?:import[ \\t]*{?[ \\w,.\\[\\]{}]*}?[ \\t]+from[ \\t]+|import[ \\t]+|required\\()"(__LIST__)(?:\\.\\w+)?"\\)?';
 var data = {};
 
 var _require = require('pytils');
@@ -100,7 +106,6 @@ var copy = _require.copy;
 var length = _require.length;
 var keys = _require.keys;
 var eachVal = _require.eachVal;
-
 
 var fs = require('fs-extra');
 

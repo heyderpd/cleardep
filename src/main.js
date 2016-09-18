@@ -28,7 +28,7 @@ const findCalledModules = () => {
                 extension: extension,
                 path: path,
                 getResumeOf: 'NOT_FOUND',
-                pattern: '(?:import[ \\t]*{?[ \\w,.\\[\\]{}]*}?[ \\t]+from[ \\t]+|import[ \\t]+|required\\()"(__LIST__)(?:\\.\\w+)?"\\)?'
+                pattern: importPattern
               })
   return {
       dependencies: notFound,
@@ -55,17 +55,19 @@ const clearAllDependencies = () => {
   return newJsonPkt
 }
 
-const main = (config) => { // (...args)
-  if (config.path === undefined) {
+const main = (...args) => {
+  // console.log('args:', args) //---!!
+  data = {}
+  data.path = args[0].split(';')
+
+  args[1] = args[1] ? args[1].split('--ext=')[1] : undefined
+  args[1] = args[1] ? args[1].split(';') : []
+  data.extension = args[1].length ? args[1] : ['js', 'jsx']
+  
+  if (data.path === undefined) {
     throw new Error('cleardep: param "path" is undefined')
   }
-
-  data = {}
-
-  data.path = typeof(config.path) === 'string' ? [config.path] : config.path
-
-  config.extension = config.extension !== undefined ? config.extension : ['js', 'jsx']
-  data.extension = typeof(config.extension) === 'string' ? [config.extension] : config.extension
+  // console.log('data:', data) //---!!
 
   data.jsonPkt = listInstalledModules()
 
@@ -84,10 +86,10 @@ const main = (config) => { // (...args)
   }
 }
 
+const importPattern = '(?:import[ \\t]*{?[ \\w,.\\[\\]{}]*}?[ \\t]+from[ \\t]+|import[ \\t]+|required\\()"(__LIST__)(?:\\.\\w+)?"\\)?'
 let data = {}
 
 const { copy, length, keys, eachVal } = require('pytils')
-
 const fs = require('fs-extra')
 const { find } = require('regex-finder')
 const jsonis = require('jsonis')

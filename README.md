@@ -13,11 +13,17 @@ npm install --save-dev cleardep
 ```terminal
 const cleardep = require('cleardep')
 
-cleardep({ path: './APP' })
+cleardep('./APP')
+
+cleardep('./APP', '--ext=js;jsa')
+
+cleardep('./APP;./CONFIG', '--ext=js;jsx;jsa')
 ```
 
 And use:
 ```terminal
 npm prune
 ```
-not is the best way but i will work to update this module coming soon...
+
+INCOMPLETE!!!
+I'm working on that works directly as args on terminal, coming soon...
