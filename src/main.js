@@ -42,7 +42,7 @@ const clearAllDependencies = () => {
   const { dependencies, dependenciesRemoveds, devDependencies, devDependenciesRemoveds } = newJsonPkt
 
   console.log("removed's:")
-  each(notFound.dependencies, (_, module) => {
+  eachVal(notFound.dependencies, module => {
     if (module !== 'cleardep') {
       dependenciesRemoveds[module] = dependencies[module]
       delete dependencies[module]
@@ -86,7 +86,7 @@ const main = (config) => { // (...args)
 
 let data = {}
 
-const { copy, length, keys, each } = require('pytils')
+const { copy, length, keys, eachVal } = require('pytils')
 
 const fs = require('fs-extra')
 const { find } = require('regex-finder')

@@ -52,7 +52,7 @@ var clearAllDependencies = function clearAllDependencies() {
 
 
   console.log("removed's:");
-  each(notFound.dependencies, function (_, module) {
+  eachVal(notFound.dependencies, function (module) {
     if (module !== 'cleardep') {
       dependenciesRemoveds[module] = dependencies[module];
       delete dependencies[module];
@@ -99,7 +99,7 @@ var _require = require('pytils');
 var copy = _require.copy;
 var length = _require.length;
 var keys = _require.keys;
-var each = _require.each;
+var eachVal = _require.eachVal;
 
 
 var fs = require('fs-extra');
