@@ -54,9 +54,10 @@ var clearAllDependencies = function clearAllDependencies() {
   console.log("removed's:");
   eachVal(notFound.dependencies, function (module) {
     if (module !== 'cleardep') {
-      dependenciesRemoveds[module] = dependencies[module];
+      var version = dependencies[module];
+      dependenciesRemoveds[module] = version;
       delete dependencies[module];
-      console.log('\t' + module);
+      console.log('\t' + version + ' ' + module);
     }
   });
 
@@ -70,9 +71,8 @@ var main = function main() {
     args[_key] = arguments[_key];
   }
 
-  // console.log('args:', args) //---!!
   data = {};
-  data.path = args[0].split(';');
+  data.path = args[0]; //.split(';') TODO multiple dir
 
   args[1] = args[1] ? args[1].split('--ext=')[1] : undefined;
   args[1] = args[1] ? args[1].split(';') : [];
@@ -81,7 +81,6 @@ var main = function main() {
   if (data.path === undefined) {
     throw new Error('cleardep: param "path" is undefined');
   }
-  // console.log('data:', data) //---!!
 
   data.jsonPkt = listInstalledModules();
 

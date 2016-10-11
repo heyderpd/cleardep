@@ -44,9 +44,10 @@ const clearAllDependencies = () => {
   console.log("removed's:")
   eachVal(notFound.dependencies, module => {
     if (module !== 'cleardep') {
-      dependenciesRemoveds[module] = dependencies[module]
+      const version = dependencies[module]
+      dependenciesRemoveds[module] = version
       delete dependencies[module]
-      console.log(`\t${module}`)
+      console.log(`\t${version} ${module}`)
     }
   })
 
@@ -56,9 +57,8 @@ const clearAllDependencies = () => {
 }
 
 const main = (...args) => {
-  // console.log('args:', args) //---!!
   data = {}
-  data.path = args[0].split(';')
+  data.path = args[0] //.split(';') TODO multiple dir
 
   args[1] = args[1] ? args[1].split('--ext=')[1] : undefined
   args[1] = args[1] ? args[1].split(';') : []
@@ -67,7 +67,6 @@ const main = (...args) => {
   if (data.path === undefined) {
     throw new Error('cleardep: param "path" is undefined')
   }
-  // console.log('data:', data) //---!!
 
   data.jsonPkt = listInstalledModules()
 
